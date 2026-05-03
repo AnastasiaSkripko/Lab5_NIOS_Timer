@@ -1,0 +1,68 @@
+/*
+ * lab5_source.c
+ *
+ *  Created on: 8 апр. 2026 г.
+ *      Author: anast
+ */
+#include <stdio.h>
+#include "system.h"
+#include "altera_avalon_pio_regs.h"
+#include <time.h>
+#include <unistd.h>
+#include <sys/alt_timestamp.h>
+
+int main() {
+    int i;
+    alt_u32 num_ticks = 0;
+    alt_u32 time1, time2, timer_overhead;
+    IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0x00);
+    if (alt_timestamp_start() < 0)
+    	printf("Проблема инициализации таймера \n");
+    else
+    	printf("Процессор Nios II запущен!\n");
+
+    while (1) {
+    time1 = alt_timestamp();
+    time2 = alt_timestamp();
+    timer_overhead = time2 - time1;
+
+    time1 = alt_timestamp();
+
+    for (i=1; i<5; i++) {
+    	switch (i) {
+    		case 4:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, ~0x00);
+				printf("LED 11000000\n");
+				usleep(500000);
+				break;
+    		case 3:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, ~0x30);
+				printf("LED 00110000\n");
+				usleep(500000);
+				break;
+    		case 2:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, ~0x00);
+				printf("LED 00001100\n");
+				usleep(500000);
+				break;
+    		case 1:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, ~0x03);
+				printf("LED 00000011\n");
+				usleep(500000);
+				break;
+    		}
+    	}
+
+
+    time2 = alt_timestamp();
+    num_ticks = time2 - time1 - timer_overhead;
+    if (alt_timestamp_start() < 0)
+    printf("Проблема инициализации таймера \n");
+    // реальная частота процессора, на которой работает счётчик таймера
+    printf("Частота работы процессора - CPU clock (Гц): %u \n", (unsigned int)alt_timestamp_freq());
+    printf("Число ticks: %u \n", (unsigned int)num_ticks);
+    printf("Процессорное время: %ul нс \n", (unsigned long)((num_ticks / alt_timestamp_freq()) * 1e9));
+    }
+    return 0;
+}
+

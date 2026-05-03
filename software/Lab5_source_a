@@ -1,0 +1,61 @@
+/*
+ * lab5_source.c
+ *
+ *  Created on: 8 апр. 2026 г.
+ *      Author: anast
+ */
+#include "system.h"
+#include "altera_avalon_pio_regs.h"
+#include <time.h>
+#include <unistd.h>
+#include <sys\alt_alarm.h>		// Функции для работы с таймерами в Nios II (alt_nticks)
+#include "stdio.h"
+
+int main () {
+	int i;
+	alt_u32 num_ticks;							// Переменные для замера времени
+	alt_u32 time1, time2, time_overhead;			// Переменные для замера времени
+	printf("Процессор Nios II запущен!\n");
+	IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0x00);	// Выключаем все LED
+	while(1) {
+		// определяем накладные расходы таймера, связанные с записью отметки времени
+		time1 = alt_nticks();
+		time2 = alt_nticks();
+		time_overhead = time2 - time1;
+		// Фиксируем время начала выполнения основной части
+		time1 = alt_nticks();
+		for (i = 1; i < 5; i++) {
+			switch(i) {
+			case 4:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0xC0);
+				printf("LED 11000000\n");
+				usleep(500000);	// Пауза 0.5 секунды
+				break;
+			case 3:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0x30);
+				printf("LED 00110000\n");
+				usleep(500000);
+				break;
+			case 2:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0x0C);
+				printf("LED 00001100\n");
+				usleep(500000);
+				break;
+			case 1:
+				IOWR_ALTERA_AVALON_PIO_DATA(LED_BASE, 0x03);
+				printf("LED 00000011\n");
+				usleep(500000);
+				break;
+			}
+		}
+		// Фиксируем временя завершения измерения
+		time2 = alt_nticks();
+		num_ticks = time2 - time1 - time_overhead;
+		// HAL system clock - частота системного таймера, которую задают в PD
+		printf("HAL system clock (Гц): %u \n", (unsigned int)alt_ticks_per_second());
+		printf("Число ticks: %u \n", (unsigned int)num_ticks);
+		printf("Процессорное время: %ul мс \n", (unsigned long)( ( num_ticks / alt_ticks_per_second() ) * 1000));
+	}
+	return 0;
+}
+
